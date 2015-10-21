@@ -539,10 +539,10 @@ Phaser.Plugin.Island.prototype.assignMoisture = function() {
         var cell = this.diagram.cells[i];
         if (cell.riverSide) console.log(cell);
         if ((cell.water || cell.river || cell.riverSide) && !cell.ocean) {
-           
-            if (cell.river) cell.moisture = 0.2;
-            if (cell.riverSide) cell.moisture = cell.riverSide;
-            if (cell.water) cell.moisture = 1;
+
+            //if (cell.river) cell.moisture = 0.2;
+            if (cell.riverSide) cell.moisture = cell.riverSide * Math.random();
+            if (cell.water) cell.moisture = 0.5 * Math.random() + 0.3;
 
             //cell.moisture = 1;
             if (!cell.ocean) {
@@ -551,19 +551,19 @@ Phaser.Plugin.Island.prototype.assignMoisture = function() {
             }
         }
     }
-    
+
     while (queue.length > 0) {
         cell = queue.shift();
         var neighbors = cell.getNeighborIds();
         for (var i = 0; i < neighbors.length; i++) {
             var nId = neighbors[i];
             var neighbor = this.diagram.cells[nId];
-            var newMoisture = cell.moisture * 0.7;
+            var newMoisture = cell.moisture * Math.random() * 0.95;
             if (neighbor.moisture == null || newMoisture > neighbor.moisture) {
                 neighbor.moisture = newMoisture;
                 queue.push(neighbor);
             }
-        } 
+        }
     }
     
     // ocean
@@ -622,19 +622,23 @@ Phaser.Plugin.Island.prototype.assignClustering = function() {
 
 Phaser.Plugin.Island.prototype.getBiome = function (cell) {
     if (cell.ocean) {
-        return 'OCEAN';
+        if (cell.site.y < this.config.height * (Math.random() * 0.2 - 0.1)) {
+            return 'SNOW';
+        } else {
+            return 'OCEAN';
+        }
     } else if (cell.water) {
         if (this.getRealElevation(cell) < 0.05) return 'MARSH';
         if (this.getRealElevation(cell) > 0.4) return 'ICE';
         return 'LAKE';
-    } else if (cell.beach) {
+    } else if (cell.beach && cell.elevation < 0.03) {
         return 'BEACH';
-    } else if (cell.elevation > 0.4) {
+    } else if (cell.elevation > 0.4 || cell.site.y < this.config.height * (0.15 + Math.random() * 0.1)) {
         if (cell.moisture > 0.50) return 'SNOW';
         else if (cell.moisture > 0.33) return 'TUNDRA';
         else if (cell.moisture > 0.16) return 'BARE';
         else return 'SCORCHED';
-    } else if (cell.elevation > 0.3) {
+    } else if (cell.elevation > 0.3 || cell.site.y < this.config.height * (0.3 + Math.random() * 0.1)) {
         if (cell.moisture > 0.66) return 'TAIGA';
         else if (cell.moisture > 0.33) return 'SHRUBLAND';
         else return 'TEMPERATE_DESERT';
