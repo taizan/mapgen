@@ -10,6 +10,7 @@ window.onload = function () {
         nbSites: 2000,
         shading: 0.0,
         //allowDebug: true,
+        seed: 168165168,
         perlinWidth: this.game.width/4,
         perlinHeight: this.game.height/4
     });
@@ -72,7 +73,7 @@ window.onload = function () {
       button.cameraOffset.setTo(10, 30);
     }
     
-  Phaser.game = new Phaser.Game(window.innerWidth, window.innerHeight, Phaser.AUTO, 'phaser-game', {create: create, preload:preload});
+  //Phaser.game = new Phaser.Game(window.innerWidth, window.innerHeight, Phaser.AUTO, 'phaser-game', {create: create, preload:preload});
   
   function create2(){
     var island = this.game.plugins.add(Phaser.Plugin.Island, {
@@ -80,7 +81,7 @@ window.onload = function () {
         shading: 0.00,
           perlinWidth: this.game.width/4,
           perlinHeight: this.game.height/4,
-          // seed: 168165168,
+          seed: 168165168,
           allowDebug: true
       });
       island.renderNow();

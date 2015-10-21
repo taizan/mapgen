@@ -60,7 +60,7 @@ Phaser.Plugin.Island.prototype.init = function (userConfig) {
 	    ROCK: '',
 	    LAVA: '#e22222',
 	    SNOW: '⛄',
-	    TUNDRA: '#ddddbb',
+	    TUNDRA: '❄️',
 	    BARE: '#bbbbbb',
 	    SCORCHED: '#999999',
 	    TAIGA: '♠',
@@ -68,7 +68,7 @@ Phaser.Plugin.Island.prototype.init = function (userConfig) {
 	    TEMPERATE_DESERT: '🌵',
 	    TEMPERATE_RAIN_FOREST: '♤',
 	    TEMPERATE_DECIDUOUS_FOREST: '♧',//'#ac9',
-	    GRASSLAND: '♒',
+	    GRASSLAND: '〟〟',
 	    TROPICAL_RAIN_FOREST: '🌳',
 	    TROPICAL_SEASONAL_FOREST: '☘',
 	    SUBTROPICAL_DESERT: '♒'
@@ -89,6 +89,7 @@ Phaser.Plugin.Island.prototype.init = function (userConfig) {
         maxRiversSize: 4,
         shading: 0.35,
         shadeOcean: true,
+        clusteringSize: 15,
         seed: Math.random()
     };
     this.config.nbRivers = this.config.nbSites / 200,
@@ -121,6 +122,7 @@ Phaser.Plugin.Island.prototype.init = function (userConfig) {
     this.assignRivers2();
     this.assignMoisture();
     this.assignBiomes();
+    this.assignClustering();
     this.treemap == null;
 
 };
@@ -341,7 +343,6 @@ Phaser.Plugin.Island.prototype.assignRivers2 = function () {
 };
 
 
-NNN = 0;
 
 Phaser.Plugin.Island.prototype.setAsRiverEdge = function (edge, size, prev) {
    
@@ -389,10 +390,8 @@ Phaser.Plugin.Island.prototype.setAsRiverEdge = function (edge, size, prev) {
             edge.nextRiver = lowerEdge;
         } else if ( lowerEdge.elevation == null && this.getEdgeElevation(edge) > 0) {
                 lowerEdge.elevation = this.getEdgeElevation(edge);
-                console.log(edge, lowerEdge, NNN);
                 lowerEdge.temp = true;
                 this.setAsRiverEdge(lowerEdge, size+1, edge);
-                NNN++;
                 edge.nextRiver = lowerEdge;
         }
         /*} else {
@@ -582,6 +581,44 @@ Phaser.Plugin.Island.prototype.assignBiomes = function() {
         cell.biome = this.getBiome(cell);
     }
 };
+
+
+Phaser.Plugin.Island.prototype.assignClustering = function() {
+    var id = 0;
+    var namegen = new NameGen();
+    for (var i = 0; i < this.diagram.cells.length; i++) {
+         var cell = this.diagram.cells[i];
+         if( !cell.clusteringId ){
+            var queue = [cell];
+            var size = 0;
+            var name = namegen.getName( NameGen.prototype.name_base.france , cell.biome  );
+            //海はクラスタリングサイズ2倍
+            var maxSize =  ( cell.biome == "OCEAN" ) ? this.config.clusteringSize * 2 : this.config.clusteringSize;
+            while( queue.length > 0 && size < maxSize){
+                var c = queue.shift();
+                if( !c.clusteringId ){
+                    c.clusteringId = id;
+                    c.name = name;
+                    size++;
+                    var neighbors = c.getNeighborIds();
+                    for (var i = 0; i < neighbors.length; i++) {
+                        var nId = neighbors[i];
+                        var neighbor = this.diagram.cells[nId];
+                        if( cell.biome == neighbor.biome && !neighbor.clusteringId ){
+                            queue.push(neighbor);
+                            //console.log(neighbor,neighbor.clusteringId,size,cell.biome ,neighbor.biome);
+                            console.log(neighbor.site.voronoiId);
+                        }
+                    }
+                }
+            }
+            console.log(id,size);
+            id++;
+         }
+    }
+}
+
+
 
 Phaser.Plugin.Island.prototype.getBiome = function (cell) {
     if (cell.ocean) {
@@ -895,16 +932,23 @@ Phaser.Plugin.Island.prototype.renderSites = function() {
     } */      
 
     var iCells = this.diagram.cells.length;
-    
-    ctx.font = "20px 'Times New Roman'";
+    //ctx.font = "20px 'Times New Roman'";
+    ctx.font = "10px";
     ctx.fillStyle = '#333';
+    var printedClusteringIdList = [];
     // values :
     for (var i = 0; i < iCells; i++) {
         var cell = this.diagram.cells[i];
-        ctx.fillText(
-            this.DISPLAY_SIGNS[cell.biome]
-            //Math.ceil(this.getRealElevation(cell) * 100)
-            , cell.site.x-10, cell.site.y+5);
+        console.log(printedClusteringIdList.indexOf(cell.clusteringId) , cell.name );
+        if( printedClusteringIdList.indexOf(cell.clusteringId) < 0 ){
+            printedClusteringIdList.push( cell.clusteringId );
+            ctx.fillText(
+                //this.DISPLAY_SIGNS[cell.biome]
+                //Math.ceil(this.getRealElevation(cell) * 100)
+                //cell.clusteringId
+                cell.name
+                , cell.site.x - cell.name.length*5, cell.site.y+5);
+        }
     }
 };
 
